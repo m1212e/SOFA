@@ -31,11 +31,26 @@ jobs:
       - name: Merge upstream/master into master
         id: merge
         run: |
-          if git merge --no-edit upstream/master; then
-            echo "conflict=false" >> "$GITHUB_OUTPUT"
-          else
+          # This fork intentionally deletes some upstream paths (website/docs/
+          # example, etc). When upstream later modifies one of those, git flags
+          # it as a modify/delete conflict. Auto-resolve any such conflict by
+          # keeping it deleted (no whitelist needed - this generically applies
+          # to whatever we've removed). Any other kind of conflict (e.g. real
+          # overlapping edits in src/) is left as-is and reported below.
+          git merge --no-commit --no-ff upstream/master || true
+
+          git status --porcelain \
+            | awk '$1 == "DU" { print substr($0, 4) }' \
+            | while IFS= read -r path; do
+                git rm -rf --ignore-unmatch -- "$path" >/dev/null
+              done
+
+          if git diff --name-only --diff-filter=U | grep -q .; then
             echo "conflict=true" >> "$GITHUB_OUTPUT"
             git merge --abort
+          else
+            git commit --no-edit
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Push merged changes

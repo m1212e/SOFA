@@ -1,4 +1,0 @@
-[build]
-  base    = "website"
-  command = "(cd animation && npm install) && npm run build"
-  publish = "website/build/sofa"
