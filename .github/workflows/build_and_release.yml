@@ -47,7 +47,7 @@ jobs:
       - name: Run tests
         run: yarn test
       - name: Run Trivy scanner on fs
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
