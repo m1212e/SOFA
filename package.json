@@ -1,5 +1,5 @@
 {
-  "name": "sofa-api",
+  "name": "@m1212e/sofa-api",
   "description": "Create REST APIs with GraphQL",
   "version": "0.18.8",
   "type": "module",
@@ -39,7 +39,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "Urigo/sofa"
+    "url": "m1212e/SOFA"
   },
   "author": {
     "name": "Uri Goldshtein",
