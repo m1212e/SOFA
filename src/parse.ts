@@ -5,6 +5,9 @@ import {
   isScalarType,
   isEqualType,
   GraphQLBoolean,
+  GraphQLString,
+  GraphQLInt,
+  GraphQLFloat,
   isInputObjectType,
   Kind,
 } from 'graphql';
@@ -43,9 +46,34 @@ function resolveVariable({
     const namedType = schema.getType(type.name.value);
 
     if (isScalarType(namedType)) {
-      // GraphQLBoolean.serialize expects a boolean or a number only
       if (isEqualType(GraphQLBoolean, namedType)) {
-        value = value === 'true' || value === true;
+        if (value === 'true' || value === true) {
+          value = true;
+        } else if (value === 'false' || value === false) {
+          value = false;
+        } else {
+          throw new TypeError(
+            `Boolean cannot represent a non boolean value: ${JSON.stringify(value)}`
+          );
+        }
+      }
+
+      if (isEqualType(GraphQLString, namedType) && typeof value !== 'string') {
+        throw new TypeError(
+          `String cannot represent a non string value: ${JSON.stringify(value)}`
+        );
+      }
+
+      if (
+        (isEqualType(GraphQLInt, namedType) ||
+          isEqualType(GraphQLFloat, namedType)) &&
+        typeof value === 'boolean'
+      ) {
+        throw new TypeError(
+          isEqualType(GraphQLInt, namedType)
+            ? `Int cannot represent non-integer value: ${JSON.stringify(value)}`
+            : `Float cannot represent non numeric value: ${JSON.stringify(value)}`
+        );
       }
 
       return namedType.serialize(value);

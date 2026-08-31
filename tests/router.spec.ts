@@ -542,6 +542,318 @@ test('primitive true boolean in requests should be handled as true', async () =>
   );
 });
 
+test('should reject a non-string JSON body value for a String! argument', async () => {
+  const spy = jest.fn();
+  const sofa = useSofa({
+    basePath: '/api',
+    schema: createSchema({
+      typeDefs: /* GraphQL */ `
+        type Query {
+          foo: String
+        }
+        type Mutation {
+          bar(arg1: String!): String
+        }
+      `,
+      resolvers: {
+        Mutation: {
+          bar: spy,
+        },
+      },
+    }),
+  });
+
+  const res = await sofa.fetch('http://localhost:4000/api/bar', {
+    method: 'POST',
+    body: JSON.stringify({ arg1: 12345 }),
+  });
+
+  expect(spy).not.toHaveBeenCalled();
+  expect(res.status).toBe(400);
+  const resBody = await res.json();
+  expect(resBody).toEqual({
+    errors: [
+      {
+        message: 'String cannot represent a non string value: 12345',
+      },
+    ],
+  });
+});
+
+test('should still accept a proper string JSON body value for a String! argument', async () => {
+  const spy = jest.fn(() => 'ok');
+  const sofa = useSofa({
+    basePath: '/api',
+    schema: createSchema({
+      typeDefs: /* GraphQL */ `
+        type Query {
+          foo: String
+        }
+        type Mutation {
+          bar(arg1: String!): String
+        }
+      `,
+      resolvers: {
+        Mutation: {
+          bar: spy,
+        },
+      },
+    }),
+  });
+
+  const res = await sofa.fetch('http://localhost:4000/api/bar', {
+    method: 'POST',
+    body: JSON.stringify({ arg1: 'hello' }),
+  });
+
+  expect(res.status).toBe(200);
+  expect(spy).toHaveBeenCalledWith(
+    /* source */ undefined,
+    /* args */ { arg1: 'hello' },
+    /* context */ expect.anything(),
+    /* info */ expect.anything()
+  );
+});
+
+test('should reject a non-boolean JSON body value for a Boolean argument', async () => {
+  const spy = jest.fn();
+  const sofa = useSofa({
+    basePath: '/api',
+    schema: createSchema({
+      typeDefs: /* GraphQL */ `
+        type Query {
+          foo: String
+        }
+        type Mutation {
+          bar(arg1: Boolean): String
+        }
+      `,
+      resolvers: {
+        Mutation: {
+          bar: spy,
+        },
+      },
+    }),
+  });
+
+  const res = await sofa.fetch('http://localhost:4000/api/bar', {
+    method: 'POST',
+    body: JSON.stringify({ arg1: 1 }),
+  });
+
+  expect(spy).not.toHaveBeenCalled();
+  expect(res.status).toBe(400);
+  const resBody = await res.json();
+  expect(resBody).toEqual({
+    errors: [
+      {
+        message: 'Boolean cannot represent a non boolean value: 1',
+      },
+    ],
+  });
+});
+
+test('should still accept the string "false" for a Boolean argument via query params', async () => {
+  const spy = jest.fn(() => 'ok');
+  const sofa = useSofa({
+    basePath: '/api',
+    schema: createSchema({
+      typeDefs: /* GraphQL */ `
+        type Query {
+          foo(arg1: Boolean): String
+        }
+      `,
+      resolvers: {
+        Query: {
+          foo: spy,
+        },
+      },
+    }),
+  });
+
+  const res = await sofa.fetch('http://localhost:4000/api/foo?arg1=false');
+
+  expect(res.status).toBe(200);
+  expect(spy).toHaveBeenCalledWith(
+    /* source */ undefined,
+    /* args */ { arg1: false },
+    /* context */ expect.anything(),
+    /* info */ expect.anything()
+  );
+});
+
+test('should reject a non-boolean query param value for a Boolean argument', async () => {
+  const spy = jest.fn();
+  const sofa = useSofa({
+    basePath: '/api',
+    schema: createSchema({
+      typeDefs: /* GraphQL */ `
+        type Query {
+          foo(arg1: Boolean): String
+        }
+      `,
+      resolvers: {
+        Query: {
+          foo: spy,
+        },
+      },
+    }),
+  });
+
+  const res = await sofa.fetch('http://localhost:4000/api/foo?arg1=notabool');
+
+  expect(spy).not.toHaveBeenCalled();
+  expect(res.status).toBe(400);
+  const resBody = await res.json();
+  expect(resBody).toEqual({
+    errors: [
+      {
+        message: 'Boolean cannot represent a non boolean value: "notabool"',
+      },
+    ],
+  });
+});
+
+test('should reject a non-numeric (boolean) JSON body value for an Int argument', async () => {
+  const spy = jest.fn();
+  const sofa = useSofa({
+    basePath: '/api',
+    schema: createSchema({
+      typeDefs: /* GraphQL */ `
+        type Query {
+          foo: String
+        }
+        type Mutation {
+          bar(arg1: Int): String
+        }
+      `,
+      resolvers: {
+        Mutation: {
+          bar: spy,
+        },
+      },
+    }),
+  });
+
+  const res = await sofa.fetch('http://localhost:4000/api/bar', {
+    method: 'POST',
+    body: JSON.stringify({ arg1: true }),
+  });
+
+  expect(spy).not.toHaveBeenCalled();
+  expect(res.status).toBe(400);
+  const resBody = await res.json();
+  expect(resBody).toEqual({
+    errors: [
+      {
+        message: 'Int cannot represent non-integer value: true',
+      },
+    ],
+  });
+});
+
+test('should reject a non-numeric (boolean) JSON body value for a Float argument', async () => {
+  const spy = jest.fn();
+  const sofa = useSofa({
+    basePath: '/api',
+    schema: createSchema({
+      typeDefs: /* GraphQL */ `
+        type Query {
+          foo: String
+        }
+        type Mutation {
+          bar(arg1: Float): String
+        }
+      `,
+      resolvers: {
+        Mutation: {
+          bar: spy,
+        },
+      },
+    }),
+  });
+
+  const res = await sofa.fetch('http://localhost:4000/api/bar', {
+    method: 'POST',
+    body: JSON.stringify({ arg1: false }),
+  });
+
+  expect(spy).not.toHaveBeenCalled();
+  expect(res.status).toBe(400);
+  const resBody = await res.json();
+  expect(resBody).toEqual({
+    errors: [
+      {
+        message: 'Float cannot represent non numeric value: false',
+      },
+    ],
+  });
+});
+
+test('should still accept a proper numeric JSON body value for an Int argument', async () => {
+  const spy = jest.fn(() => 'ok');
+  const sofa = useSofa({
+    basePath: '/api',
+    schema: createSchema({
+      typeDefs: /* GraphQL */ `
+        type Query {
+          foo: String
+        }
+        type Mutation {
+          bar(arg1: Int): String
+        }
+      `,
+      resolvers: {
+        Mutation: {
+          bar: spy,
+        },
+      },
+    }),
+  });
+
+  const res = await sofa.fetch('http://localhost:4000/api/bar', {
+    method: 'POST',
+    body: JSON.stringify({ arg1: 42 }),
+  });
+
+  expect(res.status).toBe(200);
+  expect(spy).toHaveBeenCalledWith(
+    /* source */ undefined,
+    /* args */ { arg1: 42 },
+    /* context */ expect.anything(),
+    /* info */ expect.anything()
+  );
+});
+
+test('should still accept a numeric string query param for an Int argument', async () => {
+  const spy = jest.fn(() => 'ok');
+  const sofa = useSofa({
+    basePath: '/api',
+    schema: createSchema({
+      typeDefs: /* GraphQL */ `
+        type Query {
+          foo(arg1: Int): String
+        }
+      `,
+      resolvers: {
+        Query: {
+          foo: spy,
+        },
+      },
+    }),
+  });
+
+  const res = await sofa.fetch('http://localhost:4000/api/foo?arg1=42');
+
+  expect(res.status).toBe(200);
+  expect(spy).toHaveBeenCalledWith(
+    /* source */ undefined,
+    /* args */ { arg1: 42 },
+    /* context */ expect.anything(),
+    /* info */ expect.anything()
+  );
+});
+
 // test('should overwrite field descriptions', () => {
 //   const spy = jest.fn();
 //   useSofa({
