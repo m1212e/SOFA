@@ -50,7 +50,12 @@ jobs:
             echo "conflict=true" >> "$GITHUB_OUTPUT"
             git merge --abort
           else
-            git commit --no-edit
+            # No unresolved conflicts. If upstream had nothing new (or we'd
+            # already merged it), there's no MERGE_HEAD and nothing to commit -
+            # that's success, not an error.
+            if git rev-parse -q --verify MERGE_HEAD >/dev/null; then
+              git commit --no-edit
+            fi
             echo "conflict=false" >> "$GITHUB_OUTPUT"
           fi
 
