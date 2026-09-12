@@ -31,6 +31,16 @@ jobs:
 
       - name: Merge upstream/master into master
         id: merge
+        env:
+          # Paths this fork never wants, even if upstream adds/modifies them
+          # (e.g. workflow files GITHUB_TOKEN can't push, or docs content this
+          # fork has dropped). Directories are removed recursively.
+          EXCLUDED_PATHS: |
+            .github/workflows/docs-preview.yaml
+            .github/workflows/notify-website.yaml
+            website/content/docs/
+            website/src/pages/docs/
+            website/README.md
         run: |
           # This fork intentionally deletes some upstream paths (website/docs/
           # example, etc). When upstream later modifies one of those, git flags
@@ -43,6 +53,15 @@ jobs:
           git status --porcelain \
             | awk '$1 == "DU" { print substr($0, 4) }' \
             | while IFS= read -r path; do
+                git rm -rf --ignore-unmatch -- "$path" >/dev/null
+              done
+
+          # Explicitly excluded paths: remove them even on a clean add/modify
+          # from upstream (not just modify/delete conflicts). Add new ones
+          # here as upstream introduces files/dirs this fork doesn't want.
+          echo "$EXCLUDED_PATHS" \
+            | while IFS= read -r path; do
+                [ -z "$path" ] && continue
                 git rm -rf --ignore-unmatch -- "$path" >/dev/null
               done
 
